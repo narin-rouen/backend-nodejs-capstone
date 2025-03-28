@@ -52,4 +52,31 @@ router.post('/register', async (req, res) => {
     }
 });
 
+router.post('/login', async (req, res) => {
+    try {
+        const db = await connectToDatabase();
+        const collection = db.collection('users');
+
+        const theUser = await collection.findOne({ email: req.body.email });
+        if (!theUser) {
+            logger.error('User not found');
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const isMatch = await bcryptjs.compare(req.body.password, theUser.password);
+        if (!isMatch) {
+            logger.error('Wrong password');
+            return res.status(401).json({ error: 'Wrong password' });
+        }
+
+        const payload = { user: { id: theUser._id.toString() } };
+        const authToken = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
+
+        res.json({ authToken, userName: theUser.firstName, userEmail: theUser.email });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 module.exports = router;
