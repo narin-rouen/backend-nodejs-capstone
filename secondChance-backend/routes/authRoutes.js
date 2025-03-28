@@ -2,7 +2,7 @@ const express = require('express');
 const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
-const logger = require('../utils/logger');
+const logger = require('../utils/import-mongo/logger');
 const connectToDatabase = require('../models/db');
 require('dotenv').config();
 
