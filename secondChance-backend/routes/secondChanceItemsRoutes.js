@@ -21,72 +21,97 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-
 // Get all secondChanceItems
-router.get('/', async (req, res, next) => {
-    logger.info('/ called');
+router.get('/api/secondchance/items', async (req, res, next) => {
+    logger.info('/api/secondchance/items called');
     try {
-        //Step 2: task 1 - insert code here
-        //Step 2: task 2 - insert code here
-        //Step 2: task 3 - insert code here
-        //Step 2: task 4 - insert code here
-
-        const collection = db.collection("secondChanceItems");
-        const secondChanceItems = await collection.find({}).toArray();
-        res.json(secondChanceItems);
+        const db = await connectToDatabase();  // Get the database connection
+        const collection = db.collection('secondChanceItems');  // Access the secondChanceItems collection
+        const secondChanceItems = await collection.find({}).toArray();  // Fetch all items and convert them to a JSON array
+        res.json(secondChanceItems);  // Return the fetched items as a JSON response
     } catch (e) {
-        logger.console.error('oops something went wrong', e)
-        next(e);
+        logger.console.error('oops something went wrong', e);
+        next(e);  // Pass the error to the next middleware for error handling
     }
 });
 
 // Add a new item
-router.post('/', {Step 3: Task 6 insert code here}, async(req, res,next) => {
+router.post('/api/secondchance/items', upload.single('image'), async (req, res, next) => {
     try {
+        const { name, description, price } = req.body;
+        const imageUrl = req.file ? `public/images/${req.file.originalname}` : null; // Store the uploaded image URL
 
-        //Step 3: task 1 - insert code here
-        //Step 3: task 2 - insert code here
-        //Step 3: task 3 - insert code here
-        //Step 3: task 4 - insert code here
-        //Step 3: task 5 - insert code here
-        res.status(201).json(secondChanceItem.ops[0]);
+        const db = await connectToDatabase();
+        const collection = db.collection('secondChanceItems');
+        const result = await collection.insertOne({
+            name,
+            description,
+            price,
+            imageUrl,  // Store image URL in the document
+        });
+
+        res.status(201).json(result.ops[0]);  // Return the created secondChanceItem
     } catch (e) {
-        next(e);
+        next(e);  // Pass the error to the next middleware for error handling
     }
 });
 
 // Get a single secondChanceItem by ID
-router.get('/:id', async (req, res, next) => {
+router.get('/api/secondchance/items/:id', async (req, res, next) => {
     try {
-        //Step 4: task 1 - insert code here
-        //Step 4: task 2 - insert code here
-        //Step 4: task 3 - insert code here
-        //Step 4: task 4 - insert code here
+        const { id } = req.params;
+        const db = await connectToDatabase();
+        const collection = db.collection('secondChanceItems');
+        const secondChanceItem = await collection.findOne({ _id: new require('mongodb').ObjectID(id) });
+
+        if (!secondChanceItem) {
+            return res.status(404).json({ error: 'Item not found' });
+        }
+
+        res.json(secondChanceItem);  // Return the found item as a JSON response
     } catch (e) {
         next(e);
     }
 });
 
-// Update and existing item
-router.put('/:id', async(req, res,next) => {
+// Update an existing item
+router.put('/api/secondchance/items/:id', upload.single('image'), async (req, res, next) => {
     try {
-        //Step 5: task 1 - insert code here
-        //Step 5: task 2 - insert code here
-        //Step 5: task 3 - insert code here
-        //Step 5: task 4 - insert code here
-        //Step 5: task 5 - insert code here
+        const { id } = req.params;
+        const { name, description, price } = req.body;
+        const imageUrl = req.file ? `public/images/${req.file.originalname}` : null;  // Store the uploaded image URL
+
+        const db = await connectToDatabase();
+        const collection = db.collection('secondChanceItems');
+        const result = await collection.updateOne(
+            { _id: new require('mongodb').ObjectID(id) },
+            { $set: { name, description, price, imageUrl } }
+        );
+
+        if (result.matchedCount === 0) {
+            return res.status(404).json({ error: 'Item not found' });
+        }
+
+        const updatedItem = await collection.findOne({ _id: new require('mongodb').ObjectID(id) });
+        res.json(updatedItem);  // Return the updated item as a JSON response
     } catch (e) {
         next(e);
     }
 });
 
 // Delete an existing item
-router.delete('/:id', async(req, res,next) => {
+router.delete('/api/secondchance/items/:id', async (req, res, next) => {
     try {
-        //Step 6: task 1 - insert code here
-        //Step 6: task 2 - insert code here
-        //Step 6: task 3 - insert code here
-        //Step 6: task 4 - insert code here
+        const { id } = req.params;
+        const db = await connectToDatabase();
+        const collection = db.collection('secondChanceItems');
+        const result = await collection.deleteOne({ _id: new require('mongodb').ObjectID(id) });
+
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ error: 'Item not found' });
+        }
+
+        res.json({ message: 'Item deleted successfully' });  // Return a success message
     } catch (e) {
         next(e);
     }
